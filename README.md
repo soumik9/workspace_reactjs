@@ -1,32 +1,57 @@
-# React + TypeScript + Vite
+# Mini Workspace Explorer
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+## How to Run
 
-Currently, two official plugins are available:
+1. **Install dependencies:**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+   ```bash
+   npm install
+   ```
 
-## React Compiler
+2. **Start the development server:**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+   ```bash
+   npm run dev
+   ```
 
-## Expanding the Oxlint configuration
+3. **Build for production:**
+   ```bash
+   npm run build
+   ```
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Project Structure
 
-```json
+```text
+src/
+├── components/
+│   ├── layout/
+│   ├── main_panel/
+│   ├── sidebar/
+│   └── common/
+├── libs/
+│   ├── redux/
+│   ├── interface/
+│   ├── helper/
+│   └── constant/
+└── App.tsx
+```
+
+## State Management
+
+All file system actions (create, read, update, delete) are dispatched as RTK actions. A custom Redux middleware listens to every state mutation and instantly writes the current `workspace` state to `localStorage`. When the app loads, the store initializes itself from `localStorage`, ensuring data perfectly persists across browser refreshes.
+
+## Data Structure
+
+```typescript
 {
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+  "uuid-1": { id: "uuid-1", name: "Projects", type: "folder", parentId: null },
+  "uuid-2": { id: "uuid-2", name: "notes", type: "file", parentId: "uuid-1", content: "..." }
 }
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Features
+
+- Create, Rename, and Delete nested folder & text file.
+- Searching Items.
+- Text file editor.
+- Breadcrumb navigation.
