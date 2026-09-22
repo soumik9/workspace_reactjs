@@ -1,3 +1,6 @@
+import classNames from 'classnames';
+export const cn = classNames;
+
 export const setLocalStorageData = <T>(key: string, data: T): void => {
   try {
     localStorage.setItem(key, JSON.stringify(data));
