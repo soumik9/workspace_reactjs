@@ -86,8 +86,8 @@ export const FolderView: React.FC = () => {
               ) : (
                 <FaFileAlt className="w-12 h-12 text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
               )}
-              <span className="text-sm font-medium text-gray-700 text-center w-full truncate" title={item.name}>
-                {item.name}
+              <span className="text-sm font-medium text-gray-700 text-center w-full truncate" title={item.type === ITEM_TYPES.FILE ? `${item.name}.txt` : item.name}>
+                {item.type === ITEM_TYPES.FILE ? `${item.name}.txt` : item.name}
               </span>
             </div>
           ))}
@@ -102,6 +102,7 @@ export const FolderView: React.FC = () => {
         initialName={renameItemData?.name}
         parentId={selectedFolderId}
         submitLabel="Save"
+        itemType={renameItemData?.type || ITEM_TYPES.FOLDER}
       />
     </>
   );

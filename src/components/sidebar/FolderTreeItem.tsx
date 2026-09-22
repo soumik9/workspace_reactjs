@@ -66,7 +66,9 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
         </div>
 
         {/* Item Name */}
-        <span className="truncate text-sm">{item.name}</span>
+        <span className="truncate text-sm" title={item.type === ITEM_TYPES.FILE ? `${item.name}.txt` : item.name}>
+          {item.type === ITEM_TYPES.FILE ? `${item.name}.txt` : item.name}
+        </span>
       </div>
 
       {/* Recursive Children Render */}

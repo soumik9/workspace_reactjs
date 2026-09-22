@@ -67,6 +67,7 @@ export const MainPanel: React.FC = () => {
         title={`Create New ${createType === ITEM_TYPES.FOLDER ? 'Folder' : 'File'}`}
         parentId={selectedFolderId}
         submitLabel="Create"
+        itemType={createType}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../libs/redux/store/store.redux';
+import type { ItemType } from '../../libs/interface/common.interface';
 
 interface ItemFormModalProps {
   isOpen: boolean;
@@ -11,10 +12,11 @@ interface ItemFormModalProps {
   initialName?: string;
   parentId: string | null;
   submitLabel?: string;
+  itemType: ItemType;
 }
 
 export const ItemFormModal: React.FC<ItemFormModalProps> = ({
-  isOpen, onClose, onSubmit, title, initialName = '', parentId, submitLabel = 'Save'
+  isOpen, onClose, onSubmit, title, initialName = '', parentId, submitLabel = 'Save', itemType
 }) => {
   const [name, setName] = useState(initialName);
   const [error, setError] = useState('');
@@ -38,11 +40,11 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
     // Check duplicates
     const isDuplicate = Object.values(items).some(
-      item => item.parentId === parentId && item.name.toLowerCase() === trimmedName.toLowerCase() && item.name !== initialName
+      item => item.parentId === parentId && item.type === itemType && item.name.toLowerCase() === trimmedName.toLowerCase() && item.name !== initialName
     );
 
     if (isDuplicate) {
-      setError('An item with this name already exists in this folder.');
+      setError(`A ${itemType} with this name already exists in this folder.`);
       return;
     }
 
