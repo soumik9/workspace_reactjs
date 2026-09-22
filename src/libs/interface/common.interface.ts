@@ -1,4 +1,6 @@
-export type ItemType = 'folder' | 'file';
+import { ITEM_TYPES } from '../constant/common.constant';
+
+export type ItemType = typeof ITEM_TYPES.FOLDER | typeof ITEM_TYPES.FILE;
 
 export interface FileSystemItem {
     id: string;

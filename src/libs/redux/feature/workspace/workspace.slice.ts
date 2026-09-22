@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { FileSystemItem, WorkspaceState } from '../../../interface/common.interface';
+import { ITEM_TYPES } from '../../../constant/common.constant';
 
 const initialState: WorkspaceState = {
     items: {},
@@ -47,7 +48,7 @@ const workspaceSlice = createSlice({
         },
 
         updateFileContent: (state, action: PayloadAction<{ id: string; content: string }>) => {
-            if (state.items[action.payload.id] && state.items[action.payload.id].type === 'file') {
+            if (state.items[action.payload.id] && state.items[action.payload.id].type === ITEM_TYPES.FILE) {
                 state.items[action.payload.id].content = action.payload.content;
             }
         },

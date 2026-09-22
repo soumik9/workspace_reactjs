@@ -5,6 +5,7 @@ import type { RootState } from '../../libs/redux/store/store.redux';
 import type { FileSystemItem } from '../../libs/interface/common.interface';
 import { selectFolder, selectFile } from '../../libs/redux/feature/workspace/workspace.slice';
 import { FaChevronRight, FaChevronDown, FaFolder, FaFolderOpen, FaFileAlt } from 'react-icons/fa';
+import { ITEM_TYPES } from '../../libs/constant/common.constant';
 
 interface FolderTreeItemProps {
   item: FileSystemItem;
@@ -22,7 +23,7 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
   const children = Object.values(items).filter(child => child.parentId === item.id);
   const hasChildren = children.length > 0;
 
-  const isSelected = item.type === 'folder'
+  const isSelected = item.type === ITEM_TYPES.FOLDER
     ? selectedFolderId === item.id
     : selectedFileId === item.id;
 
@@ -33,7 +34,7 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
 
   const handleSelect = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (item.type === 'folder') {
+    if (item.type === ITEM_TYPES.FOLDER) {
       dispatch(selectFolder(item.id));
       if (!isExpanded) setIsExpanded(true);
     } else {
@@ -49,15 +50,15 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
         onClick={handleSelect}
       >
         {/* Expand/Collapse Icon for folders */}
-        <div className="w-5 flex items-center justify-center mr-1 text-gray-500" onClick={item.type === 'folder' ? handleToggle : undefined}>
-          {item.type === 'folder' && (
+        <div className="w-5 flex items-center justify-center mr-1 text-gray-500" onClick={item.type === ITEM_TYPES.FOLDER ? handleToggle : undefined}>
+          {item.type === ITEM_TYPES.FOLDER && (
             isExpanded ? <FaChevronDown className="w-3 h-3" /> : <FaChevronRight className="w-3 h-3" />
           )}
         </div>
 
         {/* File/Folder Icon */}
         <div className="w-5 flex items-center justify-center mr-2">
-          {item.type === 'folder' ? (
+          {item.type === ITEM_TYPES.FOLDER ? (
             isExpanded ? <FaFolderOpen className="w-4 h-4 text-yellow-500" /> : <FaFolder className="w-4 h-4 text-yellow-500" />
           ) : (
             <FaFileAlt className="w-4 h-4 text-purple-500" />
@@ -69,7 +70,7 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
       </div>
 
       {/* Recursive Children Render */}
-      {item.type === 'folder' && isExpanded && hasChildren && (
+      {item.type === ITEM_TYPES.FOLDER && isExpanded && hasChildren && (
         <div>
           {children.map((child: FileSystemItem) => (
             <FolderTreeItem key={child.id} item={child} level={level + 1} />
