@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { Breadcrumbs } from './Breadcrumbs';
+import { FileEditor } from './FileEditor';
 import { FolderView } from './FolderView';
-import type { RootState } from '../../libs/redux/store/store.redux';
+import { Breadcrumbs } from './Breadcrumbs';
+import { useSelector, useDispatch } from 'react-redux';
 import { ItemFormModal } from '../common/ItemFormModal';
-import { addItem } from '../../libs/redux/feature/workspace/workspace.slice';
+import type { RootState } from '../../libs/redux/store/store.redux';
 import type { ItemType } from '../../libs/interface/common.interface';
+import { addItem } from '../../libs/redux/feature/workspace/workspace.slice';
 import { TOOLBAR_ACTIONS, ITEM_TYPES } from '../../libs/constant/common.constant';
 
 export const MainPanel: React.FC = () => {
@@ -51,10 +52,7 @@ export const MainPanel: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden flex flex-col">
         {selectedFileId ? (
-          <div className="flex-1 flex items-center justify-center text-gray-400">
-            {/* File Editor will go here in Step 7 */}
-            <p>Text File Editor (WIP) - File ID: {selectedFileId}</p>
-          </div>
+          <FileEditor />
         ) : (
           <FolderView />
         )}
