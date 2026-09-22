@@ -3,8 +3,8 @@ import { cn } from '../../libs/helper/common.helper';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../libs/redux/store/store.redux';
 import type { FileSystemItem } from '../../libs/interface/common.interface';
-import { selectFolder, selectFile } from '../../libs/redux/feature/workspace/workspace.slice';
-import { FaChevronRight, FaChevronDown, FaFolder, FaFolderOpen, FaFileAlt } from 'react-icons/fa';
+import { selectFolder, selectFile, deleteItem } from '../../libs/redux/feature/workspace/workspace.slice';
+import { FaChevronRight, FaChevronDown, FaFolder, FaFolderOpen, FaFileAlt, FaTrash } from 'react-icons/fa';
 import { ITEM_TYPES } from '../../libs/constant/common.constant';
 
 interface FolderTreeItemProps {
@@ -45,7 +45,7 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
   return (
     <div className="select-none">
       <div
-        className={cn('flex items-center py-1.5 px-2 cursor-pointer hover:bg-purple-50', { 'bg-purple-100 hover:bg-purple-200 text-purple-800': isSelected })}
+        className={cn('group flex items-center py-1.5 px-2 cursor-pointer hover:bg-purple-50', { 'bg-purple-100 hover:bg-purple-200 text-purple-800': isSelected })}
         style={{ paddingLeft: `${(level * 12) + 8}px` }}
         onClick={handleSelect}
       >
@@ -66,9 +66,23 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
         </div>
 
         {/* Item Name */}
-        <span className="truncate text-sm" title={item.type === ITEM_TYPES.FILE ? `${item.name}.txt` : item.name}>
+        <span className="truncate text-sm flex-1" title={item.type === ITEM_TYPES.FILE ? `${item.name}.txt` : item.name}>
           {item.type === ITEM_TYPES.FILE ? `${item.name}.txt` : item.name}
         </span>
+
+        {/* Delete Action (visible on hover) */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (window.confirm('Are you sure you want to delete this item? Nested contents will also be deleted.')) {
+              dispatch(deleteItem(item.id));
+            }
+          }}
+          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity p-1 ml-2"
+          title="Delete"
+        >
+          <FaTrash className="w-3 h-3" />
+        </button>
       </div>
 
       {/* Recursive Children Render */}
