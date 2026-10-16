@@ -13,7 +13,7 @@ const baseQuery = fetchBaseQuery({
 
 export const apiSlice = createApi({
     reducerPath: "api",
-    tagTypes: ["Profile"],
+    tagTypes: ["Profile", "Workspace"],
     baseQuery: async (args, api, extraOptions) => {
         const token = (api.getState() as { auth: IAuthState }).auth.accessToken;
         const result = await baseQuery(args, api, extraOptions);

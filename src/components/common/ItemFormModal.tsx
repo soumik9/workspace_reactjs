@@ -7,19 +7,22 @@ import type { ItemType } from '../../libs/interface/common.interface';
 interface ItemFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (name: string) => void;
+  onSubmit: (name: string) => void | Promise<void>;
+  isLoading?: boolean;
   title: string;
   initialName?: string;
-  parentId: string | null;
+  parent: string | null;
   submitLabel?: string;
   itemType: ItemType;
 }
 
 export const ItemFormModal: React.FC<ItemFormModalProps> = ({
-  isOpen, onClose, onSubmit, title, initialName = '', parentId, submitLabel = 'Save', itemType
+  isOpen, onClose, onSubmit, title, initialName = '', parent, submitLabel = 'Save', itemType, isLoading = false
 }) => {
   const [name, setName] = useState(initialName);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isBusy = isLoading || isSubmitting;
   const { items } = useSelector((state: RootState) => state.workspace);
 
   useEffect(() => {
@@ -29,8 +32,10 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
     }
   }, [isOpen, initialName]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isBusy) return;
+    setError('');
     const trimmedName = name.trim();
 
     if (!trimmedName) {
@@ -40,7 +45,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
     // Check duplicates
     const isDuplicate = Object.values(items).some(
-      item => item.parentId === parentId && item.type === itemType && item.name.toLowerCase() === trimmedName.toLowerCase() && item.name !== initialName
+      item => item.parent === parent && item.type === itemType && item.name.toLowerCase() === trimmedName.toLowerCase() && item.name !== initialName
     );
 
     if (isDuplicate) {
@@ -48,18 +53,27 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       return;
     }
 
-    onSubmit(trimmedName);
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await onSubmit(trimmedName);
+      onClose();
+    } catch (error: unknown) {
+      const response = error as { data?: { message?: string } };
+      setError(response.data?.message ?? 'Unable to save. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title}>
+    <Modal isOpen={isOpen} onClose={() => { if (!isBusy) onClose(); }} title={title}>
       <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
         <div>
           <label htmlFor="itemName" className="block text-sm font-medium text-gray-700 mb-1">
             Name
           </label>
           <input
+            disabled={isBusy}
             id="itemName"
             type="text"
             value={name}
@@ -76,6 +90,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
         <div className="flex justify-end space-x-3 pt-2">
           <button
+            disabled={isBusy}
             type="button"
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
@@ -83,10 +98,12 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
             Cancel
           </button>
           <button
+            disabled={isBusy}
+            aria-busy={isBusy}
             type="submit"
             className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
           >
-            {submitLabel}
+            {isBusy ? 'Saving...' : submitLabel}
           </button>
         </div>
       </form>

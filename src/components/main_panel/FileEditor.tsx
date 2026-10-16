@@ -23,7 +23,10 @@ export const FileEditor: React.FC = () => {
 
   const handleSave = () => {
     if (file) {
-      dispatch(updateFileContent({ id: file.id, content: localContent }));
+      dispatch(updateFileContent({
+        _id: file._id,
+        content: localContent
+      }));
     }
   };
 
@@ -35,7 +38,8 @@ export const FileEditor: React.FC = () => {
     dispatch(selectFile(null));
   };
 
-  if (!file) return null;
+  if (!file)
+    return null;
 
   return (
     <div className="flex flex-col h-full bg-white">

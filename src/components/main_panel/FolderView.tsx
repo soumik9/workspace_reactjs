@@ -11,7 +11,7 @@ export const FolderView: React.FC = () => {
 
   const dispatch = useDispatch();
   const { items, selectedFolderId } = useSelector((state: RootState) => state.workspace);
-  const currentItems = Object.values(items).filter(item => item.parentId === selectedFolderId);
+  const currentItems = Object.values(items).filter(item => item.parent === selectedFolderId);
 
   const [renameItemData, setRenameItemData] = useState<FileSystemItem | null>(null);
 
@@ -25,15 +25,15 @@ export const FolderView: React.FC = () => {
 
   const handleItemDoubleClick = (item: FileSystemItem) => {
     if (item.type === ITEM_TYPES.FOLDER) {
-      dispatch(selectFolder(item.id));
+      dispatch(selectFolder(item._id));
     } else {
-      dispatch(selectFile(item.id));
+      dispatch(selectFile(item._id));
     }
   };
 
   const handleRename = (newName: string) => {
     if (renameItemData) {
-      dispatch(renameItem({ id: renameItemData.id, name: newName }));
+      dispatch(renameItem({ _id: renameItemData._id, name: newName }));
     }
   };
 
@@ -59,7 +59,7 @@ export const FolderView: React.FC = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
           {sortedItems.map(item => (
             <div
-              key={item.id}
+              key={item._id}
               className="relative flex flex-col items-center justify-center p-4 rounded-lg hover:bg-purple-50 border border-transparent hover:border-purple-200 cursor-pointer transition-colors group select-none"
               onDoubleClick={() => handleItemDoubleClick(item)}
             >
@@ -73,7 +73,7 @@ export const FolderView: React.FC = () => {
                   <FaEdit className="w-3 h-3" />
                 </button>
                 <button
-                  onClick={(e) => handleDelete(e, item.id)}
+                  onClick={(e) => handleDelete(e, item._id)}
                   className="p-1.5 bg-white shadow-sm rounded text-gray-500 hover:text-red-600"
                   title="Delete"
                 >
@@ -100,7 +100,7 @@ export const FolderView: React.FC = () => {
         onSubmit={handleRename}
         title={`Rename ${renameItemData?.type === ITEM_TYPES.FOLDER ? 'Folder' : 'File'}`}
         initialName={renameItemData?.name}
-        parentId={selectedFolderId}
+        parent={selectedFolderId}
         submitLabel="Save"
         itemType={renameItemData?.type || ITEM_TYPES.FOLDER}
       />

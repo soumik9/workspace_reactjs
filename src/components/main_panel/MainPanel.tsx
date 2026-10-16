@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import { FileEditor } from './FileEditor';
 import { FolderView } from './FolderView';
 import { Breadcrumbs } from './Breadcrumbs';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { ItemFormModal } from '../common/ItemFormModal';
 import type { RootState } from '../../libs/redux/store/store.redux';
 import type { ItemType } from '../../libs/interface/common.interface';
-import { addItem } from '../../libs/redux/feature/workspace/workspace.slice';
+import { useCreateWorkspaceMutation } from '../../libs/redux/feature/workspace/workspace.api';
+import { successNotify } from '../../libs/helper/notify.helper';
 import { TOOLBAR_ACTIONS, ITEM_TYPES } from '../../libs/constant/common.constant';
 
 export const MainPanel: React.FC = () => {
-  const dispatch = useDispatch();
+  const [createWorkspace, { isLoading: isCreating }] = useCreateWorkspaceMutation();
   const { selectedFileId, selectedFolderId } = useSelector((state: RootState) => state.workspace);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,14 +22,14 @@ export const MainPanel: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleCreate = (name: string) => {
-    dispatch(addItem({
-      id: crypto.randomUUID(),
+  const handleCreate = async (name: string): Promise<void> => {
+    const response = await createWorkspace({
       name,
       type: createType,
-      parentId: selectedFolderId,
-      content: createType === ITEM_TYPES.FILE ? '' : undefined
-    }));
+      parent: selectedFolderId,
+      ...(createType === ITEM_TYPES.FILE ? { content: '' } : {}),
+    }).unwrap();
+    successNotify(response.message);
   };
 
   return (
@@ -63,9 +64,10 @@ export const MainPanel: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleCreate}
         title={`Create New ${createType === ITEM_TYPES.FOLDER ? 'Folder' : 'File'}`}
-        parentId={selectedFolderId}
+        parent={selectedFolderId}
         submitLabel="Create"
         itemType={createType}
+        isLoading={isCreating}
       />
     </div>
   );

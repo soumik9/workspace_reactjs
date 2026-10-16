@@ -1,3 +1,4 @@
+import { logout } from '../auth/auth.slice';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { FileSystemItem, WorkspaceState } from '../../../interface/common.interface';
 import { ITEM_TYPES } from '../../../constant/common.constant';
@@ -13,17 +14,26 @@ const workspaceSlice = createSlice({
     name: 'workspace',
     initialState,
     reducers: {
+        setItems: (state, action: PayloadAction<FileSystemItem[]>) => {
+            state.items = Object.fromEntries(action.payload.map(item => [item._id, item]));
+
+            if (state.selectedFolderId && !state.items[state.selectedFolderId])
+                state.selectedFolderId = null;
+
+            if (state.selectedFileId && !state.items[state.selectedFileId])
+                state.selectedFileId = null;
+        },
         setInitialState: (state, action) => {
             return action.payload;
         },
 
         addItem: (state, action: PayloadAction<FileSystemItem>) => {
-            state.items[action.payload.id] = action.payload;
+            state.items[action.payload._id] = action.payload;
         },
 
-        renameItem: (state, action: PayloadAction<{ id: string; name: string }>) => {
-            if (state.items[action.payload.id]) {
-                state.items[action.payload.id].name = action.payload.name;
+        renameItem: (state, action: PayloadAction<{ _id: string; name: string }>) => {
+            if (state.items[action.payload._id]) {
+                state.items[action.payload._id].name = action.payload.name;
             }
         },
 
@@ -31,10 +41,10 @@ const workspaceSlice = createSlice({
             const idToDelete = action.payload;
 
             // Helper to recursively collect all children IDs
-            const getChildrenIds = (parentId: string): string[] => {
-                const children = Object.values(state.items).filter(item => item.parentId === parentId);
+            const getChildrenIds = (parent: string): string[] => {
+                const children = Object.values(state.items).filter(item => item.parent === parent);
                 return children.reduce((acc, child) => {
-                    return [...acc, child.id, ...getChildrenIds(child.id)];
+                    return [...acc, child._id, ...getChildrenIds(child._id)];
                 }, [] as string[]);
             };
 
@@ -42,14 +52,14 @@ const workspaceSlice = createSlice({
             const idsToRemove = [idToDelete, ...getChildrenIds(idToDelete)];
             idsToRemove.forEach(id => {
                 delete state.items[id];
-                if (state.selectedFolderId === id) state.selectedFolderId = state.items[idToDelete]?.parentId || null;
+                if (state.selectedFolderId === id) state.selectedFolderId = state.items[idToDelete]?.parent || null;
                 if (state.selectedFileId === id) state.selectedFileId = null;
             });
         },
 
-        updateFileContent: (state, action: PayloadAction<{ id: string; content: string }>) => {
-            if (state.items[action.payload.id] && state.items[action.payload.id].type === ITEM_TYPES.FILE) {
-                state.items[action.payload.id].content = action.payload.content;
+        updateFileContent: (state, action: PayloadAction<{ _id: string; content: string }>) => {
+            if (state.items[action.payload._id] && state.items[action.payload._id].type === ITEM_TYPES.FILE) {
+                state.items[action.payload._id].content = action.payload.content;
             }
         },
 
@@ -66,10 +76,14 @@ const workspaceSlice = createSlice({
             state.searchQuery = action.payload;
         }
     },
+    extraReducers: (builder) => {
+        builder.addCase(logout, () => initialState);
+    },
 });
 
 export const {
     setInitialState,
+    setItems,
     addItem,
     renameItem,
     deleteItem,

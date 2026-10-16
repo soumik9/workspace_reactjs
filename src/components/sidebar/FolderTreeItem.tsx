@@ -20,12 +20,12 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
   const { items, selectedFolderId, selectedFileId } = useSelector((state: RootState) => state.workspace);
 
   // Find children of this folder
-  const children = Object.values(items).filter(child => child.parentId === item.id);
+  const children = Object.values(items).filter(child => child.parent === item._id);
   const hasChildren = children.length > 0;
 
   const isSelected = item.type === ITEM_TYPES.FOLDER
-    ? selectedFolderId === item.id
-    : selectedFileId === item.id;
+    ? selectedFolderId === item._id
+    : selectedFileId === item._id;
 
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -35,10 +35,10 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
   const handleSelect = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (item.type === ITEM_TYPES.FOLDER) {
-      dispatch(selectFolder(item.id));
+      dispatch(selectFolder(item._id));
       if (!isExpanded) setIsExpanded(true);
     } else {
-      dispatch(selectFile(item.id));
+      dispatch(selectFile(item._id));
     }
   };
 
@@ -59,7 +59,11 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
         {/* File/Folder Icon */}
         <div className="w-5 flex items-center justify-center mr-2">
           {item.type === ITEM_TYPES.FOLDER ? (
-            isExpanded ? <FaFolderOpen className="w-4 h-4 text-yellow-500" /> : <FaFolder className="w-4 h-4 text-yellow-500" />
+            isExpanded ? <FaFolderOpen
+              className="w-4 h-4 text-yellow-500"
+            /> : <FaFolder
+              className="w-4 h-4 text-yellow-500"
+            />
           ) : (
             <FaFileAlt className="w-4 h-4 text-purple-500" />
           )}
@@ -75,7 +79,7 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
           onClick={(e) => {
             e.stopPropagation();
             if (window.confirm('Are you sure you want to delete this item? Nested contents will also be deleted.')) {
-              dispatch(deleteItem(item.id));
+              dispatch(deleteItem(item._id));
             }
           }}
           className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity p-1 ml-2"
@@ -89,7 +93,11 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
       {item.type === ITEM_TYPES.FOLDER && isExpanded && hasChildren && (
         <div>
           {children.map((child: FileSystemItem) => (
-            <FolderTreeItem key={child.id} item={child} level={level + 1} />
+            <FolderTreeItem
+              key={child._id}
+              item={child}
+              level={level + 1}
+            />
           ))}
         </div>
       )}

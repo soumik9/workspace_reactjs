@@ -10,7 +10,7 @@ export default function Sidebar() {
 
   const dispatch = useDispatch();
   const { items, selectedFolderId, searchQuery } = useSelector((state: RootState) => state.workspace);
-  const rootItems = Object.values(items).filter(item => item.parentId === null);
+  const rootItems = Object.values(items).filter(item => item.parent === null);
 
   const searchResults = Object.values(items).filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -22,10 +22,10 @@ export default function Sidebar() {
 
   const handleSearchResultClick = (item: any) => {
     if (item.type === ITEM_TYPES.FOLDER) {
-      dispatch(selectFolder(item.id));
+      dispatch(selectFolder(item._id));
     } else {
-      dispatch(selectFile(item.id));
-      dispatch(selectFolder(item.parentId));
+      dispatch(selectFolder(item.parent));
+      dispatch(selectFile(item._id));
     }
     dispatch(setSearchQuery(''));
   };
@@ -58,7 +58,7 @@ export default function Sidebar() {
             ) : (
               searchResults.map(item => (
                 <div
-                  key={item.id}
+                  key={item._id}
                   onClick={() => handleSearchResultClick(item)}
                   className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-purple-100 rounded text-sm text-gray-700"
                 >
@@ -92,7 +92,7 @@ export default function Sidebar() {
                 <div className="px-4 py-2 text-sm text-gray-400 italic">Workspace is empty</div>
               ) : (
                 rootItems.map(item => (
-                  <FolderTreeItem key={item.id} item={item} />
+                  <FolderTreeItem key={item._id} item={item} />
                 ))
               )}
             </div>

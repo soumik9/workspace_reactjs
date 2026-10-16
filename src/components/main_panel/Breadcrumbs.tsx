@@ -18,12 +18,12 @@ export const Breadcrumbs: React.FC = () => {
 
     //  trace the file's parent when a file is selected, to show the path to its parent folder
     if (selectedFileId && !selectedFolderId) {
-      currentId = items[selectedFileId]?.parentId || null;
+      currentId = items[selectedFileId]?.parent || null;
     }
 
     while (currentId && items[currentId]) {
       path.push(items[currentId]);
-      currentId = items[currentId].parentId;
+      currentId = items[currentId].parent;
     }
     return path.reverse();
   };
@@ -47,13 +47,13 @@ export const Breadcrumbs: React.FC = () => {
 
       {/* Path Crumbs */}
       {path.map((item) => (
-        <React.Fragment key={item.id}>
+        <React.Fragment key={item._id}>
           <FaChevronRight className="w-3 h-3 text-gray-400" />
           <div
             className="flex items-center cursor-pointer hover:text-purple-600 transition-colors"
-            onClick={() => handleCrumbClick(item.id)}
+            onClick={() => handleCrumbClick(item._id)}
           >
-            <span className={item.id === selectedFolderId ? 'font-semibold text-gray-800' : ''}>
+            <span className={item._id === selectedFolderId ? 'font-semibold text-gray-800' : ''}>
               {item.name}
             </span>
           </div>

@@ -1,3 +1,4 @@
+import { useGetWorkspaceQuery } from '../../libs/redux/feature/workspace/workspace.api';
 import React from 'react';
 import Sidebar from '../sidebar/Sidebar';
 import { useDispatch } from 'react-redux';
@@ -13,6 +14,7 @@ interface MainLayoutProps {
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { isLoading, isError, refetch } = useGetWorkspaceQuery();
 
   const handleLogout = () => {
     dispatch(logout());
@@ -24,7 +26,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 shrink-0 flex flex-col">
         <div className="flex-1 min-h-0 overflow-hidden">
-          <Sidebar />
+          {!isLoading && !isError && <Sidebar />}
         </div>
         <div className="shrink-0 border-t border-gray-200 p-4">
           <button
@@ -40,7 +42,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
       {/* Main Panel */}
       <main className="flex-1 flex flex-col bg-white overflow-hidden relative">
-        {children}
+        {isLoading ? (
+          <div role="status" className="flex flex-1 items-center justify-center text-purple-600">Loading your workspace...</div>
+        ) : isError ? (
+          <div role="alert" className="flex flex-1 flex-col items-center justify-center space-y-4">
+            <p>Unable to load your workspace.</p>
+            <button type="button" onClick={() => refetch()} className="rounded-md bg-purple-600 px-4 py-2 text-white">Try again</button>
+          </div>
+        ) : children}
       </main>
     </div>
   );
