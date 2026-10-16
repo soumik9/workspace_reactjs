@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
+import type { ILoginRequest, IRegisterRequest } from '../../libs/interface/auth.interface';
 import { Link } from 'react-router-dom';
 import { FaArrowRight, FaEye, FaEyeSlash } from 'react-icons/fa';
 
-interface AuthFormProps {
-  mode: 'login' | 'register';
-}
+type AuthFormProps = {
+  mode: 'login';
+  onLogin: (data: ILoginRequest) => Promise<void>;
+  onRegister?: never;
+  isLoading: boolean;
+} | {
+  mode: 'register';
+  onLogin?: never;
+  onRegister: (data: IRegisterRequest) => Promise<string>;
+  isLoading: boolean;
+};
 
-export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
+export const AuthForm: React.FC<AuthFormProps> = ({ mode, onLogin, onRegister, isLoading }) => {
 
+  const isSubmitting = isLoading;
   const isRegister = mode === 'register';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -17,7 +27,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setMessage('');
@@ -29,7 +39,20 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
       setError('Passwords do not match.');
       return;
     }
-    setMessage('This form is ready. Account authentication will be available once the API is connected.');
+    if (isSubmitting) return;
+    try {
+      if (isRegister) {
+        const message = await onRegister!({ name: name.trim(), email: email.trim(), password });
+        setMessage(message + ' You can now sign in.');
+        setPassword('');
+        setConfirmPassword('');
+      } else {
+        await onLogin!({ email: email.trim(), password });
+      }
+    } catch (error: unknown) {
+      const response = error as { data?: { message?: string } };
+      setError(response.data?.message ?? 'Unable to connect. Please try again.');
+    }
   };
 
   const inputClassName = 'w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500';
@@ -145,10 +168,12 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
 
         <button
           type="submit"
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
           className="flex w-full items-center justify-center space-x-3 rounded-lg bg-purple-600 mt-1.5 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
         >
           <span>
-            {isRegister ? 'Create account' : 'Sign in'}
+            {isSubmitting ? 'Please wait...' : isRegister ? 'Create account' : 'Sign in'}
           </span>
           <FaArrowRight className="h-3 w-3" />
         </button>

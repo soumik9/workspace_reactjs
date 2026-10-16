@@ -1,3 +1,8 @@
+import { apiSlice } from './api.slice';
+import { authSliceReducer, logout, setCredential, setUser } from '../feature/auth/auth.slice';
+import { LocalStorageKeyEnum } from '../../enum/common.enum';
+import { removeLocalStorage } from '../../helper/local_storage.helper';
+import type { Middleware } from '@reduxjs/toolkit';
 import { configureStore } from '@reduxjs/toolkit';
 import type { WorkspaceState } from '../../interface/common.interface';
 import { workspaceReducer } from '../feature/workspace/workspace.slice';
@@ -5,10 +10,19 @@ import { getLocalStorageData, setLocalStorageData } from '../../helper/common.he
 import { LOCAL_STORAGE_KEYS } from '../../constant/common.constant';
 
 // Middleware to sync state to localStorage
-const localStorageMiddleware = (store: any) => (next: any) => (action: any) => {
+const localStorageMiddleware: Middleware = (store) => (next) => (action) => {
     const result = next(action);
-    const state = store.getState().workspace;
-    setLocalStorageData(LOCAL_STORAGE_KEYS.WORKSPACE_STATE, state);
+    if (typeof action === 'object' && action !== null && 'type' in action && typeof action.type === 'string' && action.type.startsWith('workspace/')) {
+        setLocalStorageData(LOCAL_STORAGE_KEYS.WORKSPACE_STATE, store.getState().workspace);
+    }
+    if (setCredential.match(action) || setUser.match(action)) {
+        const { user, accessToken } = store.getState().auth;
+        setLocalStorageData(LocalStorageKeyEnum.Auth, { user, accessToken });
+    }
+    if (logout.match(action)) {
+        removeLocalStorage(LocalStorageKeyEnum.Auth);
+        store.dispatch(apiSlice.util.resetApiState());
+    }
     return result;
 };
 
@@ -28,9 +42,11 @@ const preloadedState = loadState();
 export const store = configureStore({
     reducer: {
         workspace: workspaceReducer,
+        auth: authSliceReducer,
+        [apiSlice.reducerPath]: apiSlice.reducer,
     },
     preloadedState,
-    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(localStorageMiddleware),
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(apiSlice.middleware, localStorageMiddleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
