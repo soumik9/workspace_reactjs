@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import type { ILoginRequest, IRegisterRequest } from '../../libs/interface/auth.interface';
 import { Link } from 'react-router-dom';
 import { FaArrowRight, FaEye, FaEyeSlash } from 'react-icons/fa';
@@ -15,43 +16,41 @@ type AuthFormProps = {
   isLoading: boolean;
 };
 
-export const AuthForm: React.FC<AuthFormProps> = ({ mode, onLogin, onRegister, isLoading }) => {
+interface AuthFormValues extends IRegisterRequest {
+  confirmPassword: string;
+}
 
-  const isSubmitting = isLoading;
+export const AuthForm: React.FC<AuthFormProps> = (props) => {
+
+  const { mode, isLoading } = props;
+
   const isRegister = mode === 'register';
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const { register, handleSubmit, getValues, setError, clearErrors, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<AuthFormValues>({
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+    shouldUnregister: true,
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setMessage('');
-    if (isRegister && !name.trim()) {
-      setError('Please enter your name.');
-      return;
-    }
-    if (isRegister && password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-    if (isSubmitting) return;
+  const isSubmitting = isLoading || isFormSubmitting;
+  const [showPassword, setShowPassword] = useState(false);
+
+  const onSubmit = async (data: AuthFormValues) => {
+    if (isLoading) return;
+    clearErrors('root');
+    const { name, email, password } = data;
     try {
-      if (isRegister) {
-        const message = await onRegister!({ name: name.trim(), email: email.trim(), password });
-        setMessage(message + ' You can now sign in.');
-        setPassword('');
-        setConfirmPassword('');
+      if (props.mode === 'register') {
+        await props.onRegister({ name, email, password });
       } else {
-        await onLogin!({ email: email.trim(), password });
+        await props.onLogin({ email, password });
       }
     } catch (error: unknown) {
       const response = error as { data?: { message?: string } };
-      setError(response.data?.message ?? 'Unable to connect. Please try again.');
+      setError('root', { message: response.data?.message ?? 'Unable to connect. Please try again.' });
     }
   };
 
@@ -71,8 +70,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onLogin, onRegister, i
       </p>
 
       <form
-        onSubmit={handleSubmit}
-        onChange={() => { setError(''); setMessage(''); }}
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
+        onChange={() => clearErrors('root')}
         className="mt-6 flex flex-col space-y-4 [@media(max-height:700px)]:mt-4 [@media(max-height:700px)]:space-y-2"
       >
 
@@ -84,14 +84,18 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onLogin, onRegister, i
 
             <input
               id="name"
-              name="name"
               type="text"
               autoComplete="name"
-              required value={name}
-              onChange={(e) => setName(e.target.value)}
+              {...register('name', {
+                required: 'Please enter your name.',
+                setValueAs: (value: string) => value.trim(),
+              })}
+              aria-invalid={Boolean(errors.name)}
+              aria-describedby={errors.name ? 'name-error' : undefined}
               placeholder="Your full name"
               className={inputClassName}
             />
+            {errors.name && <p id="name-error" role="alert" className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
           </div>
         )}
         <div>
@@ -101,15 +105,19 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onLogin, onRegister, i
 
           <input
             id="email"
-            name="email"
             type="email"
             autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            {...register('email', {
+              required: 'Please enter your email address.',
+              setValueAs: value => value.trim(),
+              pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Please enter a valid email address.' },
+            })}
+            aria-invalid={Boolean(errors.email)}
+            aria-describedby={errors.email ? 'email-error' : undefined}
             placeholder="you@example.com"
             className={inputClassName}
           />
+          {errors.email && <p id="email-error" role="alert" className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
         </div>
 
         <div>
@@ -120,12 +128,15 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onLogin, onRegister, i
           <div className="relative">
             <input
               id="password"
-              name="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete={isRegister ? 'new-password' : 'current-password'}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...register('password', {
+                required: 'Please enter your password.',
+                minLength: { value: 6, message: 'Password must be at least 6 characters.' },
+                deps: isRegister ? ['confirmPassword'] : undefined,
+              })}
+              aria-invalid={Boolean(errors.password)}
+              aria-describedby={errors.password ? 'password-error' : undefined}
               placeholder="Enter your password"
               className={`${inputClassName} pr-12`}
             />
@@ -139,6 +150,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onLogin, onRegister, i
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </button>
           </div>
+          {errors.password && <p id="password-error" role="alert" className="mt-1 text-xs text-red-600">{errors.password.message}</p>}
         </div>
 
         {isRegister && (
@@ -149,21 +161,22 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onLogin, onRegister, i
 
             <input
               id="confirmPassword"
-              name="confirmPassword"
               type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
-              required value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              {...register('confirmPassword', {
+                required: 'Please confirm your password.',
+                validate: value => value === getValues('password') || 'Passwords do not match.',
+              })}
+              aria-invalid={Boolean(errors.confirmPassword)}
+              aria-describedby={errors.confirmPassword ? 'confirmPassword-error' : undefined}
               placeholder="Enter your password again"
               className={inputClassName}
             />
+            {errors.confirmPassword && <p id="confirmPassword-error" role="alert" className="mt-1 text-xs text-red-600">{errors.confirmPassword.message}</p>}
           </div>
         )}
-        {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-          {error}
-        </p>}
-        {message && <p role="status" className="rounded-lg bg-purple-50 px-4 py-3 text-sm text-purple-700">
-          {message}
+        {errors.root && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          {errors.root.message}
         </p>}
 
         <button
@@ -181,7 +194,13 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onLogin, onRegister, i
 
       <p className="mt-7 text-center text-sm text-gray-500">
         {isRegister ? 'Already have an account? ' : 'New to Workspace? '}
-        <Link to={isRegister ? '/login' : '/register'} className="font-semibold text-purple-600 hover:text-purple-700 hover:underline">{isRegister ? 'Sign in' : 'Create an account'}</Link>
+
+        <Link
+          to={isRegister ? '/login' : '/register'}
+          className="font-semibold text-purple-600 hover:text-purple-700 hover:underline"
+        >
+          {isRegister ? 'Sign in' : 'Create an account'}
+        </Link>
       </p>
     </>
   );
