@@ -32,3 +32,8 @@ export interface IWorkspaceListResponse extends IApiResponse<IWorkspaceResponse[
         has_previous_page: boolean;
     };
 }
+
+export interface IWorkspaceSummaryResponse {
+    workspace_id: string;
+    summary: string;
+}

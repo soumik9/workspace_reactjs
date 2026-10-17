@@ -1,7 +1,7 @@
 import { apiSlice } from '../../store/api.slice';
 import { addItem, deleteItem, setItems } from './workspace.slice';
 import type { IApiResponse } from '../../../interface/auth.interface';
-import type { ICreateWorkspaceRequest, IWorkspaceListResponse, IWorkspaceResponse } from '../../../interface/workspace.interface';
+import type { ICreateWorkspaceRequest, IWorkspaceListResponse, IWorkspaceResponse, IWorkspaceSummaryResponse } from '../../../interface/workspace.interface';
 import type { RootState } from '../../store/store.redux';
 
 export const workspaceApi = apiSlice.injectEndpoints({
@@ -55,6 +55,13 @@ export const workspaceApi = apiSlice.injectEndpoints({
             providesTags: ['Workspace'],
         }),
 
+        summarizeWorkspace: builder.mutation<IApiResponse<IWorkspaceSummaryResponse>, string>({
+            query: (workspace_id) => ({
+                url: 'workspace/summarize',
+                method: 'POST',
+                params: { workspace_id },
+            }),
+        }),
         // update
         updateWorkspace: builder.mutation<IApiResponse<IWorkspaceResponse>, { workspace_id: string; name?: string; content?: string }>({
             query: ({ workspace_id, ...body }) => ({
@@ -121,5 +128,6 @@ export const {
     useGetWorkspaceSingleQuery,
     useCreateWorkspaceMutation,
     useUpdateWorkspaceMutation,
+    useSummarizeWorkspaceMutation,
     useDeleteWorkspaceMutation
 } = workspaceApi;
