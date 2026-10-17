@@ -1,9 +1,11 @@
+import { useDeleteWorkspaceMutation } from '../../libs/redux/feature/workspace/workspace.api';
+import { errorNotify, successNotify } from '../../libs/helper/notify.helper';
 import React, { useState } from 'react';
 import { cn } from '../../libs/helper/common.helper';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../libs/redux/store/store.redux';
 import type { FileSystemItem } from '../../libs/interface/common.interface';
-import { selectFolder, selectFile, deleteItem } from '../../libs/redux/feature/workspace/workspace.slice';
+import { selectFolder, selectFile } from '../../libs/redux/feature/workspace/workspace.slice';
 import { FaChevronRight, FaChevronDown, FaFolder, FaFolderOpen, FaFileAlt, FaTrash } from 'react-icons/fa';
 import { ITEM_TYPES } from '../../libs/constant/common.constant';
 
@@ -15,6 +17,7 @@ interface FolderTreeItemProps {
 export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 }) => {
 
   const dispatch = useDispatch();
+  const [deleteWorkspace, { isLoading: isDeleting }] = useDeleteWorkspaceMutation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const { items, selectedFolderId, selectedFileId } = useSelector((state: RootState) => state.workspace);
@@ -39,6 +42,18 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
       if (!isExpanded) setIsExpanded(true);
     } else {
       dispatch(selectFile(item._id));
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isDeleting || !window.confirm('Are you sure you want to delete this item? Nested contents will also be deleted.')) return;
+    try {
+      const response = await deleteWorkspace(item._id).unwrap();
+      successNotify(response.message);
+    } catch (error: unknown) {
+      const response = error as { data?: { message?: string } };
+      errorNotify(response.data?.message ?? 'Unable to delete. Please try again.');
     }
   };
 
@@ -76,12 +91,8 @@ export const FolderTreeItem: React.FC<FolderTreeItemProps> = ({ item, level = 0 
 
         {/* Delete Action (visible on hover) */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (window.confirm('Are you sure you want to delete this item? Nested contents will also be deleted.')) {
-              dispatch(deleteItem(item._id));
-            }
-          }}
+          onClick={handleDelete}
+          disabled={isDeleting}
           className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity p-1 ml-2"
           title="Delete"
         >

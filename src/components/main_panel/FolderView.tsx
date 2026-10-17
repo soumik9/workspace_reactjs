@@ -1,3 +1,5 @@
+import { useUpdateWorkspaceMutation, useDeleteWorkspaceMutation } from '../../libs/redux/feature/workspace/workspace.api';
+import { errorNotify, successNotify } from '../../libs/helper/notify.helper';
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { ItemFormModal } from '../common/ItemFormModal';
@@ -5,11 +7,13 @@ import { ITEM_TYPES } from '../../libs/constant/common.constant';
 import type { RootState } from '../../libs/redux/store/store.redux';
 import { FaFolder, FaFileAlt, FaEdit, FaTrash } from 'react-icons/fa';
 import type { FileSystemItem } from '../../libs/interface/common.interface';
-import { selectFolder, selectFile, renameItem, deleteItem } from '../../libs/redux/feature/workspace/workspace.slice';
+import { selectFolder, selectFile } from '../../libs/redux/feature/workspace/workspace.slice';
 
 export const FolderView: React.FC = () => {
 
   const dispatch = useDispatch();
+  const [updateWorkspace, { isLoading: isRenaming }] = useUpdateWorkspaceMutation();
+  const [deleteWorkspace, { isLoading: isDeleting }] = useDeleteWorkspaceMutation();
   const { items, selectedFolderId } = useSelector((state: RootState) => state.workspace);
   const currentItems = Object.values(items).filter(item => item.parent === selectedFolderId);
 
@@ -31,16 +35,21 @@ export const FolderView: React.FC = () => {
     }
   };
 
-  const handleRename = (newName: string) => {
-    if (renameItemData) {
-      dispatch(renameItem({ _id: renameItemData._id, name: newName }));
-    }
+  const handleRename = async (name: string): Promise<void> => {
+    if (!renameItemData) return;
+    const response = await updateWorkspace({ workspace_id: renameItemData._id, name }).unwrap();
+    successNotify(response.message);
   };
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this item? Nested contents will also be deleted.')) {
-      dispatch(deleteItem(id));
+    if (isDeleting || !window.confirm('Are you sure you want to delete this item? Nested contents will also be deleted.')) return;
+    try {
+      const response = await deleteWorkspace(id).unwrap();
+      successNotify(response.message);
+    } catch (error: unknown) {
+      const response = error as { data?: { message?: string } };
+      errorNotify(response.data?.message ?? 'Unable to delete. Please try again.');
     }
   };
 
@@ -75,6 +84,7 @@ export const FolderView: React.FC = () => {
                 <button
                   onClick={(e) => handleDelete(e, item._id)}
                   className="p-1.5 bg-white shadow-sm rounded text-gray-500 hover:text-red-600"
+                  disabled={isDeleting}
                   title="Delete"
                 >
                   <FaTrash className="w-3 h-3" />
@@ -98,6 +108,7 @@ export const FolderView: React.FC = () => {
         isOpen={!!renameItemData}
         onClose={() => setRenameItemData(null)}
         onSubmit={handleRename}
+        isLoading={isRenaming}
         title={`Rename ${renameItemData?.type === ITEM_TYPES.FOLDER ? 'Folder' : 'File'}`}
         initialName={renameItemData?.name}
         parent={selectedFolderId}

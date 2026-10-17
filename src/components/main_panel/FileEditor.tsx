@@ -1,32 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import { useUpdateWorkspaceMutation } from '../../libs/redux/feature/workspace/workspace.api';
+import { errorNotify, successNotify } from '../../libs/helper/notify.helper';
+import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { FaFileAlt, FaSave, FaTimes } from 'react-icons/fa';
 import type { RootState } from '../../libs/redux/store/store.redux';
-import { updateFileContent, selectFile } from '../../libs/redux/feature/workspace/workspace.slice';
+import { selectFile } from '../../libs/redux/feature/workspace/workspace.slice';
 
 export const FileEditor: React.FC = () => {
 
   const dispatch = useDispatch();
+  const [updateWorkspace, { isLoading: isSaving }] = useUpdateWorkspaceMutation();
   const { items, selectedFileId } = useSelector((state: RootState) => state.workspace);
 
   const file = selectedFileId ? items[selectedFileId] : null;
-  const [localContent, setLocalContent] = useState('');
+  const [localContent, setLocalContent] = useState(file?.content ?? '');
+  const isAnyChanged = file ? localContent !== (file.content ?? '') : false;
 
-  // set content of the file
-  useEffect(() => {
-    if (file) {
-      setLocalContent(file.content || '');
-    }
-  }, [selectedFileId]);
-
-  const isAnyChanged = file ? localContent !== (file.content || '') : false;
-
-  const handleSave = () => {
-    if (file) {
-      dispatch(updateFileContent({
-        _id: file._id,
-        content: localContent
-      }));
+  const handleSave = async () => {
+    if (!file || !isAnyChanged || isSaving) return;
+    try {
+      const response = await updateWorkspace({ workspace_id: file._id, content: localContent }).unwrap();
+      successNotify(response.message);
+    } catch (error: unknown) {
+      const response = error as { data?: { message?: string } };
+      errorNotify(response.data?.message ?? 'Unable to save. Please try again.');
     }
   };
 
@@ -53,14 +50,15 @@ export const FileEditor: React.FC = () => {
         <div className="flex items-center space-x-4 text-xs">
           <button
             onClick={handleSave}
-            disabled={!isAnyChanged}
+            disabled={!isAnyChanged || isSaving}
+            aria-busy={isSaving}
             className={`flex items-center space-x-1 px-3 py-1.5 rounded transition-colors ${isAnyChanged
               ? 'bg-purple-600 text-white hover:bg-purple-700'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
           >
             <FaSave className="w-3 h-3" />
-            <span>Save</span>
+            <span>{isSaving ? 'Saving...' : 'Save'}</span>
           </button>
           <button
             onClick={handleClose}

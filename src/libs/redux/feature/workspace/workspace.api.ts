@@ -1,5 +1,5 @@
 import { apiSlice } from '../../store/api.slice';
-import { addItem, setItems } from './workspace.slice';
+import { addItem, deleteItem, setItems } from './workspace.slice';
 import type { IApiResponse } from '../../../interface/auth.interface';
 import type { ICreateWorkspaceRequest, IWorkspaceListResponse, IWorkspaceResponse } from '../../../interface/workspace.interface';
 import type { RootState } from '../../store/store.redux';
@@ -55,6 +55,44 @@ export const workspaceApi = apiSlice.injectEndpoints({
             providesTags: ['Workspace'],
         }),
 
+        // update
+        updateWorkspace: builder.mutation<IApiResponse<IWorkspaceResponse>, { workspace_id: string; name?: string; content?: string }>({
+            query: ({ workspace_id, ...body }) => ({
+                url: 'workspace/update',
+                method: 'PATCH',
+                params: { workspace_id },
+                body,
+            }),
+            async onQueryStarted(_args, { queryFulfilled, dispatch, getState }) {
+                const token = (getState() as RootState).auth.accessToken;
+                try {
+                    const { data: response } = await queryFulfilled;
+                    if (token === (getState() as RootState).auth.accessToken)
+                        dispatch(addItem(response.data));
+                } catch {
+                    // The form or editor displays the API error.
+                }
+            },
+            invalidatesTags: (_result, error) => error ? [] : ['Workspace'],
+        }),
+        deleteWorkspace: builder.mutation<IApiResponse<{ deleted_item_id: string }>, string>({
+            query: (workspace_id) => ({
+                url: 'workspace/delete',
+                method: 'DELETE',
+                params: { workspace_id },
+            }),
+            async onQueryStarted(id, { queryFulfilled, dispatch, getState }) {
+                const token = (getState() as RootState).auth.accessToken;
+                try {
+                    await queryFulfilled;
+                    if (token === (getState() as RootState).auth.accessToken) dispatch(deleteItem(id));
+                } catch {
+                    // The delete handler displays the API error.
+                }
+            },
+            invalidatesTags: (_result, error) => error ? [] : ['Workspace'],
+        }),
+
         // create data
         createWorkspace: builder.mutation<IApiResponse<IWorkspaceResponse>, ICreateWorkspaceRequest>({
             query: (body) => ({
@@ -81,5 +119,7 @@ export const workspaceApi = apiSlice.injectEndpoints({
 export const {
     useGetWorkspaceQuery,
     useGetWorkspaceSingleQuery,
-    useCreateWorkspaceMutation
+    useCreateWorkspaceMutation,
+    useUpdateWorkspaceMutation,
+    useDeleteWorkspaceMutation
 } = workspaceApi;

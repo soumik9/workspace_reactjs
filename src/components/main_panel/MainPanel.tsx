@@ -53,7 +53,7 @@ export const MainPanel: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden flex flex-col">
         {selectedFileId ? (
-          <FileEditor />
+          <FileEditor key={selectedFileId} />
         ) : (
           <FolderView />
         )}

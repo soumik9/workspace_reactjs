@@ -1,7 +1,6 @@
 import { logout } from '../auth/auth.slice';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { FileSystemItem, WorkspaceState } from '../../../interface/common.interface';
-import { ITEM_TYPES } from '../../../constant/common.constant';
 
 const initialState: WorkspaceState = {
     items: {},
@@ -23,22 +22,13 @@ const workspaceSlice = createSlice({
             if (state.selectedFileId && !state.items[state.selectedFileId])
                 state.selectedFileId = null;
         },
-        setInitialState: (state, action) => {
-            return action.payload;
-        },
-
         addItem: (state, action: PayloadAction<FileSystemItem>) => {
             state.items[action.payload._id] = action.payload;
         },
 
-        renameItem: (state, action: PayloadAction<{ _id: string; name: string }>) => {
-            if (state.items[action.payload._id]) {
-                state.items[action.payload._id].name = action.payload.name;
-            }
-        },
-
         deleteItem: (state, action: PayloadAction<string>) => {
             const idToDelete = action.payload;
+            const parent = state.items[idToDelete]?.parent ?? null;
 
             // Helper to recursively collect all children IDs
             const getChildrenIds = (parent: string): string[] => {
@@ -52,15 +42,9 @@ const workspaceSlice = createSlice({
             const idsToRemove = [idToDelete, ...getChildrenIds(idToDelete)];
             idsToRemove.forEach(id => {
                 delete state.items[id];
-                if (state.selectedFolderId === id) state.selectedFolderId = state.items[idToDelete]?.parent || null;
+                if (state.selectedFolderId === id) state.selectedFolderId = parent;
                 if (state.selectedFileId === id) state.selectedFileId = null;
             });
-        },
-
-        updateFileContent: (state, action: PayloadAction<{ _id: string; content: string }>) => {
-            if (state.items[action.payload._id] && state.items[action.payload._id].type === ITEM_TYPES.FILE) {
-                state.items[action.payload._id].content = action.payload.content;
-            }
         },
 
         selectFolder: (state, action: PayloadAction<string | null>) => {
@@ -82,12 +66,9 @@ const workspaceSlice = createSlice({
 });
 
 export const {
-    setInitialState,
     setItems,
     addItem,
-    renameItem,
     deleteItem,
-    updateFileContent,
     selectFolder,
     selectFile,
     setSearchQuery,

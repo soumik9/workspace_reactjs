@@ -1,6 +1,6 @@
 import { apiSlice } from "../../store/api.slice";
 import { setCredential, setUser } from "./auth.slice";
-import type { IApiResponse, ILoginRequest, IRegisterRequest, IUser } from "../../../interface/auth.interface";
+import type { IApiResponse, IUser } from "../../../interface/auth.interface";
 import type { IAuthState } from "../../../interface/auth.interface";
 
 export const authApi = apiSlice.injectEndpoints({
